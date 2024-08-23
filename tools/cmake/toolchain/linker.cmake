@@ -37,12 +37,12 @@ function (create_executable EXE_NAME)
     # Preprocess the scatter file for image layout symbols
     add_custom_command(OUTPUT Process-linker-script--${EXE_NAME}
                     COMMAND ${CROSS_COMPILE}gcc -E -P -I${ROOT_DIR}/val/inc -I${ROOT_DIR}/platform/pal_baremetal/${TARGET}/inc ${SCATTER_INPUT_FILE} -o ${SCATTER_OUTPUT_FILE} -DPLATFORM_NS_HYPERVISOR_PRESENT=${PLATFORM_NS_HYPERVISOR_PRESENT} -DCMAKE_BUILD={CMAKE_BUILD}
-                    DEPENDS ${VAL_LIB} ${PAL_LIB} ${TEST_LIB})
+                    DEPENDS ${VAL_LIB} ${PAL_LIB})
     add_custom_target(Process-linker-script-${EXE_NAME} ALL DEPENDS Process-linker-script--${EXE_NAME})
 
     # Link the objects
     add_custom_command(OUTPUT ${EXE_NAME}.elf
-                    COMMAND ${GNUARM_LINKER} ${CMAKE_LINKER_FLAGS} -T ${SCATTER_OUTPUT_FILE} -o ${EXE_NAME}.elf ${VAL_LIB}.a ${PAL_LIB}.a ${TEST_LIB}.a ${VAL_LIB}.a ${PAL_LIB}.a ${PAL_OBJ_LIST}
+                    COMMAND ${GNUARM_LINKER} ${CMAKE_LINKER_FLAGS} -T ${SCATTER_OUTPUT_FILE} -o ${EXE_NAME}.elf ${VAL_LIB}.a ${PAL_LIB}.a ${VAL_LIB}.a ${PAL_LIB}.a ${PAL_OBJ_LIST}
                     DEPENDS Process-linker-script-${EXE_NAME})
     add_custom_target(${EXE_NAME}_elf ALL DEPENDS ${EXE_NAME}.elf)
 
