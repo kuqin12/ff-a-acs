@@ -7,7 +7,7 @@
 
 #include "val_def.h"
 
-    .extern val_main
+    .extern sp_main
     .extern vector_table
     .extern val_stack
     .extern val_fixup_symbol_table
@@ -139,7 +139,7 @@ pie_fixup:
    stp xzr, xzr, [x0]
 
     /* And jump to the C entrypoint. */
-    b      val_main
+    b      sp_main
 
 /* ---------------------------------------------------------------------------
  * Helper to fixup Global Offset table (GOT) at runtime.

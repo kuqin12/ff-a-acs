@@ -7,65 +7,38 @@
 
 #include "val_framework.h"
 #include "val_memory.h"
-#include "val_test_dispatch.h"
+#include "val_ffa.h"
 
 /* Stack memory */
 __attribute__ ((aligned (4096))) uint8_t val_stack[STACK_SIZE];
-
+volatile bool loop1 = true;
 /**
  *   @brief    - C entry function for endpoint
  *   @param    - void
  *   @return   - void (Never returns)
 **/
-#if ((PLATFORM_SP_EL == 1) || (defined(VM1_COMPILE)))
-void val_main(void)
+void sp_main(void)
 {
+	ffa_args_t        payload;
+	ffa_endpoint_id_t target_id, my_id;
 
-#ifndef TARGET_LINUX
-    /* Configure and enable Stage-1 MMU */
-    if (val_setup_mmu())
-    {
-        goto exit;
-    }
-#endif
+	LOG(ALWAYS, "Entering main loop 1.. \n", 0, 0);
 
-    /* Ready to run test regression */
-    if (val_get_curr_endpoint_logical_id() == VM1)
-    {
-#ifndef TARGET_LINUX
-        write_hcr_el2((1 << 27)); //TGE=1
-#endif
-        val_irq_setup();
-    }
+	val_ffa_msg_wait(&payload);
 
-    val_run_test_suite();
+	while (1) {
+		if (payload.fid != FFA_MSG_SEND_DIRECT_REQ_64)
+		{
+				LOG(ERROR, "\tInvalid fid received, fid=0x%x, error=0x%x\n", payload.fid, payload.arg2);
+				return;
+		}
 
-#ifndef TARGET_LINUX
-exit:
-#endif
-    LOG(ALWAYS, "Entering standby.. \n", 0, 0);
-    pal_terminate_simulation();
+		target_id = SENDER_ID(payload.arg1);
+		my_id = RECEIVER_ID(payload.arg1);
+
+		val_memset(&payload, 0, sizeof(ffa_args_t));
+		payload.arg1 = ((uint32_t)my_id << 16) | target_id;
+		payload.arg3 = VAL_ERROR;
+		val_ffa_msg_send_direct_resp_64(&payload);
+	}
 }
-#else
-void val_main(void)
-{
-    ffa_args_t payload;
-
-    val_memset(&payload, 0, sizeof(ffa_args_t));
-
-    /* FFA_SUCCESS case: Returns 16-bit ID of calling FF-A component. */
-    val_ffa_id_get(&payload);
-    if (payload.fid != FFA_SUCCESS_32)
-    {
-        LOG(ERROR, "\tEL0: Check failed for ffa_id_get success case\n", 0, 0);
-        goto exit;
-    }
-
-    LOG(ALWAYS, "EL0 entry.. id %lx\n", payload.arg2, 0);
-    val_run_test_suite();
-
-exit:
-    LOG(ALWAYS, "Entering standby.. \n", 0, 0);
-    pal_terminate_simulation();
-}
-#endif

@@ -11,7 +11,7 @@
 
 #define min(a, b) (a < b)?a:b
 
-//#define PGT_DEBUG 1
+#define PGT_DEBUG 1
 
 #if ((PLATFORM_SP_EL == 1) || (defined(VM1_COMPILE)))
 static uint32_t bits_per_level;
@@ -249,7 +249,7 @@ static uint32_t ilog2(uint64_t size)
     return 0;
 }
 #endif
-
+volatile bool loop = true;
 /**
  * @brief Create page table for given memory addresses and attributes
  * @param pgt_desc - Data like input and output address size, translation stage.
@@ -278,6 +278,9 @@ static uint32_t val_pgt_create(pgt_descriptor_t pgt_desc,
     LOG(DBG, "\tval_pgt_create: attributes = 0x%lx\n",
         mem_desc->attributes, 0);
 #endif
+    LOG(ERROR, "\tval_pgt_create: address virtual_address: 0x%lx \n", mem_desc->virtual_address, 0);
+    LOG(ERROR, "\tval_pgt_create: address physical_address: 0x%lx \n", mem_desc->physical_address, 0);
+    LOG(ERROR, "\tval_pgt_create: address page_size: 0x%lx \n", page_size, 0);
     if ((mem_desc->virtual_address & (uint64_t)(page_size - 1)) != 0 ||
         (mem_desc->physical_address & (uint64_t)(page_size - 1)) != 0)
     {
@@ -364,7 +367,7 @@ static uint32_t val_map_endpoint_region(pgt_descriptor_t pgt_desc)
         mem_desc.length = endpoint_image_regions[i].length;
         mem_desc.attributes = endpoint_image_regions[i].attributes;
 
-        LOG(DBG, "\tCreating page table for image region  : 0x%lx - 0x%lx\n",
+        LOG(ERROR, "\t 1.3 Creating page table for image region  : 0x%lx - 0x%lx\n",
             mem_desc.virtual_address, (mem_desc.virtual_address + mem_desc.length) - 1);
 
         if (val_pgt_create(pgt_desc, &mem_desc))
@@ -387,7 +390,7 @@ static uint32_t val_map_endpoint_region(pgt_descriptor_t pgt_desc)
         mem_desc.length = (uint64_t)((memory_region_descriptor_t *)region_list)->length;
         mem_desc.attributes = (uint64_t)((memory_region_descriptor_t *)region_list)->attributes;
 
-        LOG(DBG, "\tCreating page table for device region  : 0x%lx - 0x%lx\n",
+        LOG(ERROR, "\t 2 Creating page table for device region  : 0x%lx - 0x%lx\n",
             mem_desc.virtual_address, (mem_desc.virtual_address + mem_desc.length) - 1);
 
         if (val_pgt_create(pgt_desc, &mem_desc))
@@ -397,6 +400,8 @@ static uint32_t val_map_endpoint_region(pgt_descriptor_t pgt_desc)
 
         region_list = region_list + sizeof(memory_region_descriptor_t);
     }
+
+    LOG(ERROR, "\t 2 returning\n", 0, 0);
 
     return VAL_SUCCESS;
 }
@@ -478,7 +483,8 @@ uint32_t val_setup_mmu(void)
     /* Create page tables for image sections and assigned device */
     if (val_map_endpoint_region(pgt_desc))
         return VAL_ERROR;
-
+    LOG(ERROR, "\tval_setup_mmu: here 1.1\n", 0, 0);
+    while (loop) {}
     /* Enable MMU */
     val_sctlr_write((1 << 0) | // M=1 Enable the stage 1 MMU
                     (1 << 2) | // C=1 Enable data and unified caches
@@ -486,9 +492,11 @@ uint32_t val_setup_mmu(void)
                     (1 << 23) | // PSTATE.PAN is left unchanged on taking an exception to EL1
                     val_sctlr_read(currentEL),
                     currentEL);
+                    LOG(ERROR, "\tval_setup_mmu: here 2\n", 0, 0);
 #ifdef PGT_DEBUG
-    LOG(DBG, "\tval_setup_mmu: successful\n", 0, 0);
+    LOG(ERROR, "\tval_setup_mmu: successful\n", 0, 0);
 #endif
+LOG(ERROR, "\tval_setup_mmu: here 3\n", 0, 0);
     return VAL_SUCCESS;
 }
 
@@ -513,5 +521,7 @@ uint32_t val_mem_map_pgt(memory_region_descriptor_t *mem_desc)
     pgt_desc.ias = PGT_IAS;
     pgt_desc.oas = PAGT_OAS;
 
+    LOG(ERROR, "\t 3 Creating page table for device region  : 0x%lx - 0x%lx\n",
+            mem_desc->virtual_address, (mem_desc->virtual_address + mem_desc->length) - 1);
     return val_pgt_create(pgt_desc, mem_desc);
 }
