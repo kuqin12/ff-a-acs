@@ -30,7 +30,7 @@ void sp_main(void)
 	ffa_args_t        payload;
 	ffa_endpoint_id_t target_id, my_id;
 
-	LOG(ALWAYS, "Entering main loop 8.. \n", 0, 0);
+	LOG(ALWAYS, "Entering main loop 9.. \n", 0, 0);
 
 	// Intended Feature 1: reserved memory access
 	for (uint64_t i = 0x000001001FFFE000; i < 0x000001001FFFF000; i+=sizeof(uint32_t))
@@ -47,6 +47,41 @@ void sp_main(void)
 	LOG(ALWAYS, "\tReceived message fid=0x%x, sender=0x%x\n", payload.fid, sender);
 	LOG(ALWAYS, "\tReceived message receiver=0x%x, 0x%x\n", receiver, payload.arg1);
 
+	target_id = sender;
+	my_id = receiver;
+
+	val_memset(&payload, 0, sizeof(ffa_args_t));
+	payload.arg1 = ((uint32_t)my_id << 16) | target_id;
+	payload.arg2 = 0;
+	payload.arg3 = 0;
+	payload.arg4 = 0xdeadbeef;
+	val_ffa_msg_send_direct_resp_64(&payload);
+
+	// print the incoming message
+	sender = SENDER_ID(payload.arg1);
+	receiver = RECEIVER_ID(payload.arg1);
+	LOG(ALWAYS, "\tReceived 2nd message fid=0x%x, sender=0x%x\n", payload.fid, sender);
+	LOG(ALWAYS, "\tReceived 2nd message receiver=0x%x, 0x%x\n", receiver, payload.arg1);
+
+	target_id = sender;
+	my_id = receiver;
+
+	val_memset(&payload, 0, sizeof(ffa_args_t));
+	payload.arg1 = ((uint32_t)my_id << 16) | target_id;
+	payload.arg2 = 0;
+	payload.arg3 = 0;
+	payload.arg4 = 0xfeedf00d;
+	val_ffa_msg_send_direct_resp2_64(&payload);
+
+	val_memset(&payload, 0, sizeof(ffa_args_t));
+	val_ffa_msg_wait(&payload);
+
+	// print the incoming message
+	sender = SENDER_ID(payload.arg1);
+	receiver = RECEIVER_ID(payload.arg1);
+	LOG(ALWAYS, "\tReceived 3rd message fid=0x%x, sender=0x%x\n", payload.fid, sender);
+	LOG(ALWAYS, "\tReceived 3rd message receiver=0x%x, 0x%x\n", receiver, payload.arg1);
+
 	// Intended Feature 2: Register interrupt handler for the intended GPIO
 
 	// Let's do GPIO_2 for now
@@ -59,7 +94,7 @@ void sp_main(void)
 	pal_mmio_write32(GPIO_BASE + GPIODIR_OFFSET, gpioidr);
 
 	// Program PADDR 
-	uint32_t paddr = pal_mmio_read32 (GPIO_BASE + (1 << (gpio_num + PADDR_9_2_OFFSET)));
+	uint32_t paddr = pal_mmio_read32 (GPIO_BASE + (uint32_t)(1 << (gpio_num + PADDR_9_2_OFFSET)));
 	paddr &= (uint32_t)(~(1 << gpio_num));
 
 	// Program GPIOIBE to make sure this is not triggering on both edges.
@@ -135,6 +170,6 @@ void sp_main(void)
 		val_memset(&payload, 0, sizeof(ffa_args_t));
 		payload.arg1 = ((uint32_t)my_id << 16) | target_id;
 		payload.arg3 = VAL_ERROR;
-		val_ffa_msg_send_direct_resp_64(&payload);
+		val_ffa_msg_send_direct_resp2_64(&payload);
 	}
 }

@@ -12,7 +12,7 @@
 #if (PLATFORM_FFA_V_1_0 == 1)
 #define FFA_VERSION_MINOR 0x0
 #else
-#define FFA_VERSION_MINOR 0x1
+#define FFA_VERSION_MINOR 0x2
 #endif
 
 #define VAL_GET_MAJOR(x) ((x >> 16) & 0x7fff)
@@ -82,6 +82,8 @@
 #define FFA_NOTIFICATION_INFO_GET_64 0xC4000083
 #define FFA_MEM_PERM_GET_64          0xC4000088
 #define FFA_MEM_PERM_SET_64          0xC4000089
+#define FFA_MSG_SEND_DIRECT_REQ2_64  0xC400008D
+#define FFA_MSG_SEND_DIRECT_RESP2_64 0xC400008E
 
 #define SENDER_ID(x)    (x >> 16) & 0xffff
 #define RECEIVER_ID(x)  (x & 0xffff)
@@ -134,6 +136,7 @@ void val_ffa_msg_send_direct_req_32(ffa_args_t *args);
 void val_ffa_msg_send_direct_req_64(ffa_args_t *args);
 void val_ffa_msg_send_direct_resp_32(ffa_args_t *args);
 void val_ffa_msg_send_direct_resp_64(ffa_args_t *args);
+void val_ffa_msg_send_direct_resp2_64(ffa_args_t *args);
 ffa_endpoint_id_t val_get_curr_endpoint_id(void);
 void val_ffa_id_get(ffa_args_t *args);
 void val_ffa_spm_id_get(ffa_args_t *args);

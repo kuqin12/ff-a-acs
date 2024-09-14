@@ -173,6 +173,13 @@ static void ffa_msg_send_direct_resp(ffa_args_t *args, bool arch64)
     }
 }
 
+static void ffa_msg_send_direct_resp2(ffa_args_t *args)
+{
+    *args = ffa_smccc(FFA_MSG_SEND_DIRECT_RESP2_64, args->arg1, args->arg2,
+                        args->arg3, args->arg4, args->arg5, args->arg6,
+                        args->arg7);
+}
+
 /**
  * @brief - Send a Partition message in parameter registers as a response to
  *          a target endpoint, run the endpoint and block until a response is
@@ -197,6 +204,11 @@ void val_ffa_msg_send_direct_resp_32(ffa_args_t *args)
 void val_ffa_msg_send_direct_resp_64(ffa_args_t *args)
 {
     ffa_msg_send_direct_resp(args, true);
+}
+
+void val_ffa_msg_send_direct_resp2_64(ffa_args_t *args)
+{
+    ffa_msg_send_direct_resp2(args);
 }
 
 static void ffa_id_get(ffa_args_t *args)
