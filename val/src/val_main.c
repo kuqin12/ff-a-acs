@@ -73,9 +73,6 @@ void sp_main(void)
 	payload.arg4 = 0xfeedf00d;
 	val_ffa_msg_send_direct_resp2_64(&payload);
 
-	val_memset(&payload, 0, sizeof(ffa_args_t));
-	val_ffa_msg_wait(&payload);
-
 	// print the incoming message
 	sender = SENDER_ID(payload.arg1);
 	receiver = RECEIVER_ID(payload.arg1);
